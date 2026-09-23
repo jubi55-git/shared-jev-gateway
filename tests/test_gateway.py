@@ -290,3 +290,15 @@ def test_telemetry_failure_holds(tmp_path, policy, state, facts):
     r = evaluate(policy, state, facts, ledger=JsonlLedger(tmp_path / "l.jsonl"), telemetry=Broken(),
                  transport=FakeJev(answers(policy)), model=MODEL)
     assert (r["route"], r["reason_code"]) == ("HOLD", "telemetry_error")
+
+
+# redact(): Callerが伏せた後のstateは検査を通り、伏せた値はpayloadに残らない
+def test_redact_then_passes_state_check(tmp_path, policy, state, facts):
+    from jev_decision_gateway import redact
+    raw = "token = os.environ['X_TOKEN_VALUE']\nkey sk-abcdefghijklmnopqrstu\nmail a@example.com\ntest-key-not-real"
+    state["change"] = redact(raw)
+    for leak in ("sk-abcdefghijklmnopqrstu", "a@example.com", "test-key-not-real", "X_TOKEN_VALUE"):
+        assert leak not in state["change"]
+    jev = FakeJev(answers(policy))
+    assert run(tmp_path, policy, state, facts, jev)["route"] == "PASS"
+    assert "[REDACTED]" in jev.requests[0]["state"]["change"]

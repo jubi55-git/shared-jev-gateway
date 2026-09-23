@@ -32,6 +32,19 @@ _SECRET_PATTERNS = [re.compile(p) for p in (
 )]
 
 
+REDACTED = "[REDACTED]"
+
+
+def redact(text: str) -> str:
+    """秘密情報らしき部分を伏せる。Callerが最小stateを作るときに使う（検査と同じパターン）。"""
+    key = os.environ.get("TYPESAFE_API_KEY", "").strip()
+    if key:
+        text = text.replace(key, REDACTED)
+    for pattern in _SECRET_PATTERNS:
+        text = pattern.sub(REDACTED, text)
+    return text
+
+
 def _now() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 

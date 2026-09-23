@@ -1,0 +1,23 @@
+name: tag
+# main の __version__ が上がったら v<版> のタグを自動で打つ（既にあれば何もしない）
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create tag if missing
+        run: |
+          version=$(python3 -c "import re;print(re.search(r'__version__ = \"([^\"]+)\"', open('src/jev_decision_gateway/__init__.py').read()).group(1))")
+          tag="v${version}"
+          if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+            echo "${tag} already exists"; exit 0
+          fi
+          git tag -a "${tag}" -m "Jev Decision Gateway Core ${version}"
+          git push origin "${tag}"
