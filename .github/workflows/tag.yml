@@ -3,6 +3,7 @@ name: tag
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 permissions:
   contents: write
 jobs:
@@ -19,5 +20,6 @@ jobs:
           if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
             echo "${tag} already exists"; exit 0
           fi
-          git tag -a "${tag}" -m "Jev Decision Gateway Core ${version}"
+          # 軽量タグにする（注釈付きは作成者の名前が要り、Actions の実行環境には無い）
+          git tag "${tag}"
           git push origin "${tag}"
