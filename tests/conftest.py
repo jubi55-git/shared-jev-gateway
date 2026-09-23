@@ -56,6 +56,7 @@ def facts():
 def _env(monkeypatch):
     monkeypatch.setenv("TYPESAFE_API_KEY", "test-key-not-real")
     monkeypatch.delenv("TYPESAFE_JEV_MODEL", raising=False)
+    monkeypatch.delenv("TYPESAFE_AUTH", raising=False)
 
 
 class FakeJev:

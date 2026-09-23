@@ -37,15 +37,38 @@ def api_key() -> str:
     return value
 
 
+def auth_headers() -> dict[str, str]:
+    """認証ヘッダー。**`TYPESAFE_API_KEY` があれば従来どおり Bearer**(Cloud Run 等)。
+
+    鍵が無く、`TYPESAFE_AUTH=proxy` が**明示されている**ときだけ、ヘッダーを付けずに送る
+    (Claude Cloud の API Credential。Bearer はプロキシが付ける。Credential は環境変数に出ない)。
+    自動判定はしない ── Credential を登録していない環境で素通しにしないため。
+    """
+    if os.environ.get("TYPESAFE_API_KEY", "").strip():
+        return {"Authorization": "Bearer " + api_key()}
+    if os.environ.get("TYPESAFE_AUTH", "").strip().lower() == "proxy":
+        return {}
+    return {"Authorization": "Bearer " + api_key()}      # 鍵が無い → ここで止まる
+
+
+def auth_available() -> bool:
+    """通信せずに、認証の手段があるか。"""
+    try:
+        auth_headers()
+    except JevStopped:
+        return False
+    return True
+
+
 def post_system_one(request: dict) -> dict:
     """TypeSafe公式APIへ1回だけ送る。自動retryしない。"""
-    key = api_key()
+    auth = auth_headers()
     try:
         with httpx.Client(timeout=TIMEOUT_SECONDS, follow_redirects=False) as client:
             response = client.post(
                 ENDPOINT,
                 headers={
-                    "Authorization": "Bearer " + key,
+                    **auth,
                     "Accept": "application/json",
                     "Content-Type": "application/json",
                 },
