@@ -154,8 +154,9 @@ def aggregate(policy: Policy, probs: dict[str, float]) -> tuple[str, str, list[d
     for q in policy.questions:
         if q.counter_of is None:
             continue
-        a, b = by_name[q.name]["band"], by_name[q.counter_of]["band"]
-        if {a, b} == {"ok", "fail"}:
+        a, b = p_ok[q.name], p_ok[q.counter_of]
+        # 論理的な矛盾: 片方が強く「保たれている」(≥0.85)、もう片方が強く「失敗」(≤0.15)
+        if (a >= UNKNOWN_HIGH and b <= REJECT_THRESHOLD) or (b >= UNKNOWN_HIGH and a <= REJECT_THRESHOLD):
             by_name[q.name]["effect"] = by_name[q.counter_of]["effect"] = "contradiction"
             return HOLD, f"contradiction:{q.counter_of}", subs, min_conf
 
@@ -180,12 +181,19 @@ def aggregate(policy: Policy, probs: dict[str, float]) -> tuple[str, str, list[d
 def evaluate(policy, state, facts, *, ledger, telemetry=None, escalation_target=None,
              transport=None, model=None) -> dict:
     """1件の判定。必ず DecisionResult(dict) を返し、例外を外へ出さない。"""
-    result = _evaluate(policy, state, facts, ledger=ledger, escalation_target=escalation_target,
-                       transport=transport, model=model)
+    try:
+        result = _evaluate(policy, state, facts, ledger=ledger, escalation_target=escalation_target,
+                           transport=transport, model=model)
+    except Exception:
+        result = {**_base(None, escalation_target), "reason_code": "internal_error"}
     if result.get("route") not in ROUTES:
         result = {**result, "route": HOLD, "reason_code": "unexpected_route"}
     if telemetry is not None:
-        telemetry.record(result)
+        try:
+            telemetry.record(result)
+        except Exception:
+            # 計測を残せない判定は使わせない（台帳には残るので、次回は再送せず再生される）
+            result = {**result, "route": HOLD, "reason_code": "telemetry_error"}
     return result
 
 

@@ -262,3 +262,31 @@ def test_result_fields(tmp_path, policy, state, facts):
     for key in ("route", "policy", "policy_version", "policy_hash", "core_version", "model",
                 "input_hash", "probabilities", "min_confidence", "sub_checks", "reason_code"):
         assert r[key] is not None, key
+
+
+# セルフレビューで追加: 矛盾は合意どおり ≥0.85 と ≤0.15 の組で拾う（PASS閾値ではない）
+def test_contradiction_uses_agreed_band(tmp_path, policy, state, facts):
+    policy["questions"].append({
+        "name": "requirements_all_addressed", "failure_mode": "completeness", "polarity": "assurance",
+        "severity": "normal", "required": False, "counter_of": "requirement_missing",
+        "instructions": "要求一覧のすべての項目について、対応する変更箇所を指し示せる"})
+    a = answers(policy, requirement_missing=0.13, requirements_all_addressed=0.10)  # p_ok 0.87 と 0.10
+    r = run(tmp_path, policy, state, facts, FakeJev(a))
+    assert (r["route"], r["reason_code"]) == ("HOLD", "contradiction:requirement_missing")
+
+
+# セルフレビューで追加: どんな入力でも例外を外へ出さずHOLD
+def test_never_raises_on_unserializable_policy(tmp_path, policy, state, facts):
+    policy["description"] = object()
+    r = run(tmp_path, policy, state, facts, FakeJev(answers(policy)))
+    assert r["route"] == "HOLD"
+
+
+def test_telemetry_failure_holds(tmp_path, policy, state, facts):
+    class Broken:
+        def record(self, _result):
+            raise OSError("disk full")
+
+    r = evaluate(policy, state, facts, ledger=JsonlLedger(tmp_path / "l.jsonl"), telemetry=Broken(),
+                 transport=FakeJev(answers(policy)), model=MODEL)
+    assert (r["route"], r["reason_code"]) == ("HOLD", "telemetry_error")
