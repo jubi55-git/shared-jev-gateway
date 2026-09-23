@@ -44,7 +44,7 @@ Raw input → (Caller) 事実の計算・最小state
 ```bash
 jev-gateway evaluate --policy p.json --state s.json --facts f.json \
   --ledger ledger.jsonl --telemetry telemetry.jsonl \
-  --escalation-target opus-5.5-medium --expect-version 0.1.1
+  --escalation-target opus-5.5-medium --expect-version 0.1.2
 jev-gateway lint-policy p.json
 jev-gateway record-parent-call --telemetry telemetry.jsonl --input-hash <hash> --target opus-5.5-medium
 jev-gateway telemetry --telemetry telemetry.jsonl
@@ -58,7 +58,7 @@ TypeScript からの例（学習アプリ）:
 
 ```ts
 const { stdout } = await execFileAsync("jev-gateway", ["evaluate", "--policy", p, "--state", s,
-  "--facts", f, "--ledger", l, "--telemetry", t, "--expect-version", "0.1.1"]);
+  "--facts", f, "--ledger", l, "--telemetry", t, "--expect-version", "0.1.2"]);
 const result = JSON.parse(stdout); // 失敗・解析不能は HOLD 扱い
 ```
 
@@ -66,7 +66,8 @@ const result = JSON.parse(stdout); // 失敗・解析不能は HOLD 扱い
 
 ## 環境変数
 
-- `TYPESAFE_API_KEY`（必須。stateへ入れない）
+- `TYPESAFE_API_KEY`（stateへ入れない）。**無いときは `TYPESAFE_AUTH=proxy` が要る**
+- `TYPESAFE_AUTH=proxy`（任意。Claude Cloud の API Credential を使う。鍵が無いときだけ効き、Authorization を付けずに送る。Bearer はプロキシが付ける。**自動判定はしない**）
 - `TYPESAFE_JEV_MODEL`（任意。既定 `jev-1.13.0`。`jev-` で始まる固定版だけ）
 
 ## 版の管理

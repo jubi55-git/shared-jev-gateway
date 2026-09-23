@@ -237,9 +237,7 @@ def _evaluate(policy, state, facts, *, ledger, escalation_target, transport, mod
     if ledger is None:
         return {**result, "reason_code": "ledger_required"}
     if transport is None:
-        try:
-            typesafe.api_key()
-        except typesafe.JevStopped:
+        if not typesafe.auth_available():
             return {**result, "reason_code": "api_key_invalid"}
 
     request = {"state": state, "model": resolved, "questions": pol.question_payload()}
