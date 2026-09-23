@@ -71,7 +71,7 @@ const result = JSON.parse(stdout); // 失敗・解析不能は HOLD 扱い
 
 ## 版の管理
 
-- タグ `vX.Y.Z` で配る。各プロジェクトはタグで固定する
+- タグ `vX.Y.Z` で配る。**`__version__` を上げて main へ入れると、`.github/workflows/tag.yml` が自動でタグを打つ**（手で打たない）。各プロジェクトはタグか commit SHA で固定する
   - Python: `jev-decision-gateway @ git+https://github.com/jubi55-git/shared-jev-gateway@v0.1.0`
   - CLIだけ使う: `uv tool install git+https://github.com/jubi55-git/shared-jev-gateway@v0.1.0`
 - 判定結果とinput hashに `core_version` / `policy_version` / `policy_hash` が入る。版が変わると別判定になる
