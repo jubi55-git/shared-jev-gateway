@@ -1,0 +1,37 @@
+{
+  "policy": "question_quality",
+  "version": "question-quality-v1",
+  "description": "外部プロジェクト（学習アプリ）用の見本。事実はTS側がコードで計算して渡す。",
+  "facts": [
+    {"name": "schema_valid", "must_be": true, "else": "REJECT"},
+    {"name": "within_length", "must_be": true, "else": "REJECT"},
+    {"name": "source_attached", "must_be": true, "else": "HOLD"}
+  ],
+  "state_fields": {
+    "source_excerpt": {"max_chars": 4000},
+    "question": {"max_chars": 1000},
+    "choices": {"max_chars": 1000, "required": false},
+    "answer": {"max_chars": 500},
+    "explanation": {"max_chars": 2000}
+  },
+  "questions": [
+    {"name": "source_deviation_present", "failure_mode": "source_fidelity", "polarity": "risk",
+     "severity": "critical", "required": true,
+     "instructions": "問題文または正答に、提示された原文の内容から外れた主張が含まれている"},
+    {"name": "multiple_correct_present", "failure_mode": "answer_uniqueness", "polarity": "risk",
+     "severity": "critical", "required": true,
+     "instructions": "提示された情報だけで、正答以外にも正解として成立する選択肢や答えがある"},
+    {"name": "answer_explanation_conflict", "failure_mode": "answer_consistency", "polarity": "risk",
+     "severity": "critical", "required": true,
+     "instructions": "解説の内容が、示された正答と食い違う箇所を含んでいる"},
+    {"name": "question_ambiguous", "failure_mode": "ambiguity", "polarity": "risk",
+     "severity": "normal", "required": true,
+     "instructions": "問題文が、読み手によって異なる問いとして解釈できる"},
+    {"name": "outside_knowledge_added", "failure_mode": "unsupported_knowledge", "polarity": "risk",
+     "severity": "normal", "required": true,
+     "instructions": "解説が、原文に書かれていない知識を事実として補っている"},
+    {"name": "parent_review_needed", "failure_mode": "uncertainty", "polarity": "risk",
+     "severity": "uncertainty", "required": true,
+     "instructions": "提示された情報だけでは判断しきれず、より高性能なモデルによる確認が必要な不確実性が残っている"}
+  ]
+}
