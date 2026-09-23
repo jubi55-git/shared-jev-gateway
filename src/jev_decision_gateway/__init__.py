@@ -5,9 +5,9 @@ PASS / REJECT / ESCALATE / HOLD はコードが決める。親モデルは呼ば
 """
 from __future__ import annotations
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
-from .gateway import evaluate  # noqa: E402
+from .gateway import evaluate, redact  # noqa: E402
 from .policy import Policy, PolicyError, load_policy  # noqa: E402
 
-__all__ = ["__version__", "evaluate", "Policy", "PolicyError", "load_policy"]
+__all__ = ["__version__", "evaluate", "redact", "Policy", "PolicyError", "load_policy"]

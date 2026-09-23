@@ -44,7 +44,7 @@ Raw input → (Caller) 事実の計算・最小state
 ```bash
 jev-gateway evaluate --policy p.json --state s.json --facts f.json \
   --ledger ledger.jsonl --telemetry telemetry.jsonl \
-  --escalation-target opus-5.5-medium --expect-version 0.1.0
+  --escalation-target opus-5.5-medium --expect-version 0.1.1
 jev-gateway lint-policy p.json
 jev-gateway record-parent-call --telemetry telemetry.jsonl --input-hash <hash> --target opus-5.5-medium
 jev-gateway telemetry --telemetry telemetry.jsonl
@@ -52,13 +52,13 @@ jev-gateway telemetry --telemetry telemetry.jsonl
 
 **呼び出し側の約束:** 終了コードが0以外、または標準出力のJSONを読めないときは**HOLDとして扱う。**
 
-Python からは `from jev_decision_gateway import evaluate`。
+Python からは `from jev_decision_gateway import evaluate, redact`。**stateを作るときは `redact()` で秘密情報らしき部分を伏せる**（検査と同じパターン。伏せずに渡すとHOLD）。
 
 TypeScript からの例（学習アプリ）:
 
 ```ts
 const { stdout } = await execFileAsync("jev-gateway", ["evaluate", "--policy", p, "--state", s,
-  "--facts", f, "--ledger", l, "--telemetry", t, "--expect-version", "0.1.0"]);
+  "--facts", f, "--ledger", l, "--telemetry", t, "--expect-version", "0.1.1"]);
 const result = JSON.parse(stdout); // 失敗・解析不能は HOLD 扱い
 ```
 
