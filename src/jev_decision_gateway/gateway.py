@@ -76,9 +76,7 @@ def _base(policy: Policy | None, escalation_target) -> dict:
 def _resolve_model(model: str | None) -> str:
     if model is None:
         return typesafe.resolve_model()
-    if not isinstance(model, str) or not model.startswith("jev-") or "latest" in model.lower():
-        raise typesafe.JevStopped("固定版のJevモデルだけを受け付けます。")
-    return model
+    return typesafe.check_model(model)
 
 
 def check_facts(policy: Policy, facts) -> tuple[str, str] | None:
