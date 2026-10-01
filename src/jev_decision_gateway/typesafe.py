@@ -19,14 +19,25 @@ class JevStopped(RuntimeError):
     """Jevの結果を安全に確定できないとき止める。"""
 
 
-def resolve_model() -> str:
-    """検証済み固定版だけを許可する。latest aliasは拒否。"""
-    model = os.environ.get("TYPESAFE_JEV_MODEL", "").strip() or DEFAULT_MODEL
-    if not model.startswith("jev-") or "latest" in model.lower():
+# **承認済みの版の一覧**(2026-10-01)。形式上正しい `jev-<版>` でも、ここに無ければ通信の前に止める。
+# 版を足すのは、その版で比較(blind comparison 等)をしてから。ここを直して新しい版を固定し、
+# 利用側の依存の固定(SHA)を上げる。
+APPROVED_MODELS = frozenset({DEFAULT_MODEL})
+
+
+def check_model(model: object) -> str:
+    """固定版かつ承認済みの版だけを返す。latest alias・未承認の版は `JevStopped`。"""
+    if (not isinstance(model, str) or not model.startswith("jev-")
+            or "latest" in model.lower() or model not in APPROVED_MODELS):
         raise JevStopped(
-            "TYPESAFE_JEV_MODEL は検証済みの固定版（例 jev-1.13.0）を指定してください。"
+            f"Jev のモデルは承認済みの固定版（{', '.join(sorted(APPROVED_MODELS))}）だけを受け付けます。"
         )
     return model
+
+
+def resolve_model() -> str:
+    """検証済み固定版だけを許可する。latest alias・未承認の版は拒否。"""
+    return check_model(os.environ.get("TYPESAFE_JEV_MODEL", "").strip() or DEFAULT_MODEL)
 
 
 def api_key() -> str:

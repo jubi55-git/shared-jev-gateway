@@ -302,3 +302,21 @@ def test_redact_then_passes_state_check(tmp_path, policy, state, facts):
     jev = FakeJev(answers(policy))
     assert run(tmp_path, policy, state, facts, jev)["route"] == "PASS"
     assert "[REDACTED]" in jev.requests[0]["state"]["change"]
+
+
+# 18: 形式上は正しくても、承認一覧に無い版は通信の前に止める(2026-10-01)
+def test_unapproved_model_rejected_before_call(tmp_path, policy, state, facts):
+    jev = FakeJev(answers(policy))
+    r = evaluate(policy, state, facts, ledger=JsonlLedger(tmp_path / "l.jsonl"),
+                 transport=jev, model="jev-1.14.0")
+    assert r["reason_code"] == "model_invalid" and jev.requests == []
+
+
+def test_unapproved_env_model_stops(monkeypatch):
+    from jev_decision_gateway import typesafe
+    monkeypatch.setenv("TYPESAFE_JEV_MODEL", "jev-1.14.0")
+    import pytest
+    with pytest.raises(typesafe.JevStopped):
+        typesafe.resolve_model()
+    monkeypatch.setenv("TYPESAFE_JEV_MODEL", "jev-1.13.0")
+    assert typesafe.resolve_model() == "jev-1.13.0"
